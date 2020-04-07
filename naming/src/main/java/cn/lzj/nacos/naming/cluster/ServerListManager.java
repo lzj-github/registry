@@ -41,6 +41,7 @@ public class ServerListManager {
     public void listen(ServerChangeListener listener) {
         listeners.add(listener);
     }
+    
 
     /**
      * 返回配置文件读取的server列表
