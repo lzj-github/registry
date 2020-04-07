@@ -12,7 +12,7 @@ public class Constants {
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
 
     //心跳间隔时间
-    public static final int DEFAULT_HEART_BEAT_INTERVAL = 5;
+    public static final int DEFAULT_HEART_BEAT_INTERVAL = 6;
 
     //心跳线程池的默认线程数
     public static final int DEFAULT_BEAT_THREAD_COUNT = 2;
@@ -29,6 +29,9 @@ public class Constants {
     //发送注册消息的前后缀
     public static final String REGISTER_SERVICE_ROUND="[rr]";
 
+    //发送服务发现消息的前后缀
+    public static final String SERVICE_FOUND_ROUND="[se]";
+
     //集群文件的分隔符
     public static String COMMA_DIVISION = ",";
 
@@ -37,5 +40,8 @@ public class Constants {
 
     //每隔3分钟读取配置文件cluster.conf,刷新一次集群列表
     public static final long SERVER_LIST_REFRESH_INTERVAL = 3;
+
+    //每隔15s获取服务端最新的注册数据，把数据设置到客户端的缓存map中
+    public static final long SERVICE_FOUND_REFRESH_INTEEVAL = 15;
 
 }

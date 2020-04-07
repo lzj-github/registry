@@ -4,6 +4,8 @@ package cn.lzj.nacos.naming.netty.handler;
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.api.pojo.BeatInfo;
 import cn.lzj.nacos.api.pojo.Instance;
+import cn.lzj.nacos.api.pojo.ServiceInfo;
+import cn.lzj.nacos.naming.core.Service;
 import cn.lzj.nacos.naming.core.ServiceManager;
 import cn.lzj.nacos.naming.netty.AcceptorIdleStateTrigger;
 import cn.lzj.nacos.naming.netty.MessageProtocol;
@@ -14,6 +16,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 
 @Data
@@ -41,7 +45,10 @@ public class ServerHandler extends SimpleChannelInboundHandler<MessageProtocol> 
                 //接收到某个实例的第一次消息(包括注册或心跳)，就把该实例的socketAddress与它的namespaceId和serviceName存起来，方便后续在内存注册表剔除该实例
                 AcceptorIdleStateTrigger.dataMap.put(ctx.channel().remoteAddress(),beatInfo.getNamespaceId()+"##"+beatInfo.getServiceName()+"##"+beatInfo.getIp()+"##"+beatInfo.getPort());
             }
-            System.out.println(AcceptorIdleStateTrigger.dataMap);
+
+            //System.out.println(AcceptorIdleStateTrigger.dataMap);
+            //{/127.0.0.1:56454=36a3c1fa-646a-4bec-ab10-b0427cfe4278##abcd##192.168.153.1##8081, /127.0.0.1:56455=36a3c1fa-646a-4bec-ab10-b0427cfe4278##abcd##192.168.153.1##8082}
+
             //收到心跳就把读空闲次数重新设置为0
             AcceptorIdleStateTrigger.readIdleTimesMap.put(ctx.channel().remoteAddress(),0);
         }else if(msgStr.startsWith(Constants.REGISTER_SERVICE_ROUND)&&msgStr.endsWith(Constants.REGISTER_SERVICE_ROUND)){
@@ -49,11 +56,20 @@ public class ServerHandler extends SimpleChannelInboundHandler<MessageProtocol> 
             Instance instance = JSON.parseObject(getRealMsg(msgStr),Instance.class);
             log.info(instance.toString());
             if(!AcceptorIdleStateTrigger.dataMap.containsKey(ctx.channel().remoteAddress())){
-                System.out.println("注册");
                 //接收到某个实例的第一次消息(包括注册或心跳)，就把该实例的socketAddress与它的namespaceId和serviceName存起来，方便后续在内存注册表剔除该实例
                 AcceptorIdleStateTrigger.dataMap.put(ctx.channel().remoteAddress(),instance.getNamespaceId()+"##"+instance.getServiceName()+"##"+instance.getIp()+"##"+instance.getPort());
             }
             serviceManager.registerInstance(instance);
+        }else if(msgStr.startsWith(Constants.SERVICE_FOUND_ROUND)&&msgStr.endsWith(Constants.SERVICE_FOUND_ROUND)){
+            log.info("=====有实例来请求返回注册表的信息了=====");
+            String nameSpaceId=getRealMsg(msgStr);
+            Map<String, ServiceInfo> services=serviceManager.getServices(nameSpaceId);
+            MessageProtocol messageProtocol = new MessageProtocol();
+            String message = Constants.SERVICE_FOUND_ROUND + JSON.toJSONString(services) + Constants.SERVICE_FOUND_ROUND;
+            messageProtocol.setLen(message.getBytes().length);
+            messageProtocol.setContent(message.getBytes());
+            ctx.writeAndFlush(messageProtocol);
+            log.info("返回实例列表:{}"+services);
         }
 
     }

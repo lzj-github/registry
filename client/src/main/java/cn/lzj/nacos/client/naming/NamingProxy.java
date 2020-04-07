@@ -3,6 +3,7 @@ package cn.lzj.nacos.client.naming;
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.api.pojo.BeatInfo;
 import cn.lzj.nacos.api.pojo.Instance;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
 import cn.lzj.nacos.client.netty.MessageProtocol;
 import cn.lzj.nacos.client.netty.NettyClient;
 import com.alibaba.fastjson.JSON;
@@ -11,22 +12,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Random;
+
 @Slf4j
 @Component
 public class NamingProxy {
-//    @Autowired
-//    private NettyClient nettyClient;
 
-    /*public void sendBeat(BeatInfo beatInfo) {
-        Channel channel = nettyClient.getChannel();
-        MessageProtocol messageProtocol=new MessageProtocol();
-        //message加上协议字符来区分消息
-        String message= Constants.BEAT_ROUND+JSON.toJSONString(beatInfo)+Constants.BEAT_ROUND;
-        messageProtocol.setLen(message.getBytes().length);
-        messageProtocol.setContent(message.getBytes());
-        channel.writeAndFlush(messageProtocol);
-    }
-*/
+    @Autowired
+    private DiscoveryProperties discoveryProperties;
 
     /**
      * 发送注册信息
@@ -40,6 +34,24 @@ public class NamingProxy {
         messageProtocol.setLen(message.getBytes().length);
         messageProtocol.setContent(message.getBytes());
         channel.writeAndFlush(messageProtocol);
-        log.info("registering service {} with instance: {}",  serviceName, instance);
+        log.info("实例:{} 注册服务:{}", instance, serviceName);
+    }
+
+    /**
+     * 发送获取服务列表的请求
+     * @param namespaceId
+     * @return
+     */
+    public void queryList(String namespaceId){//, List<String> clusters) {
+        Channel channel=NettyClient.channel;
+        //int index=random.nextInt(clusters.size());
+        //String server=clusters.get(index);
+        MessageProtocol messageProtocol=new MessageProtocol();
+        String message=Constants.SERVICE_FOUND_ROUND+namespaceId+Constants.SERVICE_FOUND_ROUND;
+        messageProtocol.setLen(message.getBytes().length);
+        messageProtocol.setContent(message.getBytes());
+        channel.writeAndFlush(messageProtocol);
+        log.info("客户端服务发现请求");
+
     }
 }

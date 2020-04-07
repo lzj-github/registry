@@ -1,21 +1,18 @@
 package cn.lzj.nacos.client.naming;
 
-import cn.lzj.nacos.api.common.Constants;
-import cn.lzj.nacos.api.pojo.BeatInfo;
 import cn.lzj.nacos.api.pojo.Instance;
+import cn.lzj.nacos.api.pojo.ServiceInfo;
 import cn.lzj.nacos.client.api.NamingService;
-import cn.lzj.nacos.client.config.NacosDiscoveryProperties;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
+import cn.lzj.nacos.client.core.HostReactor;
 import cn.lzj.nacos.client.netty.NettyClient;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 
 
-import javax.annotation.PostConstruct;
-import java.net.InetSocketAddress;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @Slf4j
@@ -23,13 +20,16 @@ import java.util.concurrent.CountDownLatch;
 public class NacosNamingService implements NamingService, InitializingBean {
 
     @Autowired
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private DiscoveryProperties discoveryProperties;
 
     @Autowired
     private NettyClient nettyClient;
 
     @Autowired
     private NamingProxy namingProxy;
+
+    @Autowired
+    private HostReactor hostReactor;
 
     /**
      *注册实例
@@ -43,6 +43,24 @@ public class NacosNamingService implements NamingService, InitializingBean {
         instance.setPort(port);
         instance.setClusterName(groupName);
         namingProxy.registerService(serviceName,instance);
+    }
+
+    /**
+     * 服务发现
+     * @param namespaceId
+     * @return
+     */
+    @Override
+    public void serviceFound(String namespaceId){
+        hostReactor.getServiceInfo(namespaceId);
+    }
+
+    /**
+     * 返回所有实例
+     * @return
+     */
+    public Map<String, ServiceInfo> getAllInstance(){
+        return hostReactor.getAllInstances();
     }
 
 
@@ -66,8 +84,10 @@ public class NacosNamingService implements NamingService, InitializingBean {
                     e.printStackTrace();
                 }
                 //注册服务
-                registerInstance(nacosDiscoveryProperties.getService(),nacosDiscoveryProperties.getClusterName(),
-                        nacosDiscoveryProperties.getClientIp(),nacosDiscoveryProperties.getClientPort(),nacosDiscoveryProperties.getNamespace());
+                registerInstance(discoveryProperties.getService(), discoveryProperties.getClusterName(),
+                        discoveryProperties.getClientIp(), discoveryProperties.getClientPort(), discoveryProperties.getNamespace());
+                //从服务端那里获取实例列表
+                serviceFound( discoveryProperties.getNamespace());
 
             }
         }

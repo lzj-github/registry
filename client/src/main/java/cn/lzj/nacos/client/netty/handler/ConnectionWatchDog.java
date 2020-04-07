@@ -1,6 +1,6 @@
 package cn.lzj.nacos.client.netty.handler;
 
-import cn.lzj.nacos.client.config.NacosDiscoveryProperties;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
 import cn.lzj.nacos.client.naming.NacosNamingService;
 import cn.lzj.nacos.client.netty.ChannelHandlerHolder;
 import cn.lzj.nacos.client.netty.ConnectionListener;
@@ -29,14 +29,14 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
     private volatile boolean reconnect = true;
     private int attempts;//重试次数
 
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private DiscoveryProperties discoveryProperties;
 
     private NacosNamingService nacosNamingService;
 
-    public ConnectionWatchDog(Bootstrap bootstrap, Timer timer,NacosDiscoveryProperties nacosDiscoveryProperties,NacosNamingService nacosNamingService,boolean reconnect) {
+    public ConnectionWatchDog(Bootstrap bootstrap, Timer timer, DiscoveryProperties discoveryProperties, NacosNamingService nacosNamingService, boolean reconnect) {
         this.bootstrap = bootstrap;
         this.timer = timer;
-        this.nacosDiscoveryProperties=nacosDiscoveryProperties;
+        this.discoveryProperties = discoveryProperties;
         this.nacosNamingService=nacosNamingService;
         this.reconnect = reconnect;
     }
@@ -79,14 +79,14 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
             }
         });
         //重连
-        ChannelFuture channelFuture = bootstrap.connect(nacosDiscoveryProperties.getNettyServerIp(), nacosDiscoveryProperties.getNettyServerPort());
+        ChannelFuture channelFuture = bootstrap.connect(discoveryProperties.getNettyServerIp(), discoveryProperties.getNettyServerPort());
         channelFuture.addListener(new ConnectionListener()).sync();
         //重新连接后channel会改变
         NettyClient.channel=channelFuture.channel();
         //System.out.println("channel:"+NettyClient.channel);
         //重新注册服务
-        nacosNamingService.registerInstance(nacosDiscoveryProperties.getService(),nacosDiscoveryProperties.getClusterName(),
-                nacosDiscoveryProperties.getClientIp(),nacosDiscoveryProperties.getClientPort(),nacosDiscoveryProperties.getNamespace());
+        nacosNamingService.registerInstance(discoveryProperties.getService(), discoveryProperties.getClusterName(),
+                discoveryProperties.getClientIp(), discoveryProperties.getClientPort(), discoveryProperties.getNamespace());
 
     }
 

@@ -19,7 +19,7 @@ import java.util.Map;
 @Data
 @Component
 @ConfigurationProperties("nacos.discovery")
-public class NacosDiscoveryProperties  {
+public class DiscoveryProperties {
 
     private String serverAddr;
 
@@ -53,6 +53,9 @@ public class NacosDiscoveryProperties  {
     @Value("${server.port}")
     private int clientPort;
 
+    //每个实例时启动时使用时间戳，来决定请求发给哪个Server
+    private long startTimeStamp;
+
     @PostConstruct
     public void init(){
         if(namespace==null){
@@ -69,6 +72,7 @@ public class NacosDiscoveryProperties  {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+        startTimeStamp=System.currentTimeMillis();
     }
 
 }

@@ -2,7 +2,7 @@ package cn.lzj.nacos.client.netty;
 
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.api.pojo.BeatInfo;
-import cn.lzj.nacos.client.config.NacosDiscoveryProperties;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
 import com.alibaba.fastjson.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -24,7 +24,7 @@ import java.beans.BeanInfo;
 public class ConnectorIdleStateTrigger  extends SimpleChannelInboundHandler<MessageProtocol>  {
 
     @Autowired
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private DiscoveryProperties discoveryProperties;
 
 
     @Override
@@ -33,11 +33,11 @@ public class ConnectorIdleStateTrigger  extends SimpleChannelInboundHandler<Mess
             IdleStateEvent event = (IdleStateEvent) evt;
             IdleState state=event.state();
             BeatInfo beatInfo=new BeatInfo();
-            beatInfo.setNamespaceId(nacosDiscoveryProperties.getNamespace());
-            beatInfo.setServiceName(nacosDiscoveryProperties.getService());
-            beatInfo.setClusterName(nacosDiscoveryProperties.getClusterName());
-            beatInfo.setIp(nacosDiscoveryProperties.getClientIp());
-            beatInfo.setPort(nacosDiscoveryProperties.getClientPort());
+            beatInfo.setNamespaceId(discoveryProperties.getNamespace());
+            beatInfo.setServiceName(discoveryProperties.getService());
+            beatInfo.setClusterName(discoveryProperties.getClusterName());
+            beatInfo.setIp(discoveryProperties.getClientIp());
+            beatInfo.setPort(discoveryProperties.getClientPort());
             if(state==IdleState.WRITER_IDLE){//写空闲
                 //发送心跳...
                 //message加上协议字符来区分消息

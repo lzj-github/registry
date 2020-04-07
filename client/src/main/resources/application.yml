@@ -8,6 +8,6 @@ nacos:
 
 spring:
   application:
-    name: abc
+    name: abcd
 server:
   port: 8081

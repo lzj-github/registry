@@ -1,6 +1,7 @@
 package cn.lzj.nacos.client.netty;
 
-import cn.lzj.nacos.client.config.NacosDiscoveryProperties;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
+import cn.lzj.nacos.client.core.HostReactor;
 import cn.lzj.nacos.client.naming.NacosNamingService;
 import cn.lzj.nacos.client.netty.handler.ConnectionWatchDog;
 import cn.lzj.nacos.client.netty.handler.HeartBeatClientHandler;
@@ -45,7 +46,7 @@ public class NettyClient {
     private final HashedWheelTimer timer = new HashedWheelTimer();
 
     @Autowired
-    private NacosDiscoveryProperties nacosDiscoveryProperties;
+    private DiscoveryProperties discoveryProperties;
 
     @Autowired
     private NacosNamingService nacosNamingService;
@@ -53,11 +54,13 @@ public class NettyClient {
     @Autowired
     private final ConnectorIdleStateTrigger idleStateTrigger;
 
+    @Autowired
+    private HostReactor hostReactor;
 
     public void start(CountDownLatch countDownLatch) {
         try {
-            ip=nacosDiscoveryProperties.getNettyServerIp();
-            port=nacosDiscoveryProperties.getNettyServerPort();
+            ip= discoveryProperties.getNettyServerIp();
+            port= discoveryProperties.getNettyServerPort();
             //客户端需要一个事件循环组
             group = new NioEventLoopGroup();
             //创建客户端启动对象
@@ -66,16 +69,17 @@ public class NettyClient {
             bootstrap.group(group)//设置线程组
                     .channel(NioSocketChannel.class);// 使用NioSocketChannel作为客户端的通道实现
 
-            final ConnectionWatchDog watchDog=new ConnectionWatchDog(bootstrap,timer,nacosDiscoveryProperties,nacosNamingService,true) {
+            //手动传参，不然报空指针！！！
+            final ConnectionWatchDog watchDog=new ConnectionWatchDog(bootstrap,timer, discoveryProperties,nacosNamingService,true) {
                 @Override
                 public ChannelHandler[] handlers() {
                     return new ChannelHandler[]{
                             new MessageEncoder(),//编码器
                             this,
-                            new IdleStateHandler(0,30,0, TimeUnit.SECONDS),
+                            new IdleStateHandler(0,5,0, TimeUnit.SECONDS),
                             idleStateTrigger,
                             new MessageDecoder(),//解码器
-                            new HeartBeatClientHandler()
+                            new HeartBeatClientHandler(hostReactor)
                     };
                 }
             };

@@ -2,6 +2,7 @@ package cn.lzj.nacos.naming.core;
 
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.api.pojo.Instance;
+import cn.lzj.nacos.api.pojo.ServiceInfo;
 import cn.lzj.nacos.naming.consistency.ConsistencyService;
 import cn.lzj.nacos.naming.push.ServiceChangeEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -137,5 +138,26 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         //放进内存注册表
         putService(service);
         log.info("服务注册完成，内存注册表:"+serviceMap);
+    }
+
+    /**
+     * 通过namespaceId拿到实例列表
+     * @param nameSpaceId
+     * @return
+     */
+    public Map<String, ServiceInfo> getServices(String nameSpaceId) {
+        //Map<namespaceId,Map<serviceName,Service>>  从内存注册表中根据namespaceId拿出里层的map
+        Map<String, Service> serviceMap0 = serviceMap.get(nameSpaceId);
+        Map<String, ServiceInfo> serviceInfoMap=new ConcurrentHashMap<>();
+        for(Map.Entry<String, Service> entry: serviceMap0.entrySet())
+        {
+            Service service = entry.getValue();
+            ServiceInfo serviceInfo=new ServiceInfo();
+            serviceInfo.setName(service.getName());
+            serviceInfo.setInstances(service.getClusterMap().get(service.getNamespaceId()+"##"+service.getName()));
+            serviceInfoMap.put(service.getName(),serviceInfo);
+        }
+
+        return serviceInfoMap;
     }
 }
