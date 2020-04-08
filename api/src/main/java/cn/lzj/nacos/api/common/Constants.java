@@ -11,8 +11,11 @@ public class Constants {
     //默认组名
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
 
-    //心跳间隔时间
-    public static final int DEFAULT_HEART_BEAT_INTERVAL = 6;
+    //发送心跳间隔时间
+    public static final int DEFAULT_SEND_HEART_BEAT_INTERVAL = 5;
+
+    //接收心跳间隔时间
+    public static final int DEFAULT_RECEIVED_HEART_BEAT_INTERVAL = 6;
 
     //心跳线程池的默认线程数
     public static final int DEFAULT_BEAT_THREAD_COUNT = 2;
@@ -43,5 +46,11 @@ public class Constants {
 
     //每隔15s获取服务端最新的注册数据，把数据设置到客户端的缓存map中
     public static final long SERVICE_FOUND_REFRESH_INTEEVAL = 15;
+
+    //超过10s没收到server集群间的消息，就认为该server过期了
+    public static long SEVER_EXPIRED_MILLS = TimeUnit.SECONDS.toMillis(15);
+
+    //server每隔3秒向集群里的其他server节点发送一次心跳
+    public static int SERVER_STATUS_SYNCHRONIZATION_PERIOD_MILLIS = 3;
 
 }

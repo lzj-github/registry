@@ -1,6 +1,6 @@
 
 
-nacos:
+registry:
   discovery:
     server-addr: localhost:9000
   netty:

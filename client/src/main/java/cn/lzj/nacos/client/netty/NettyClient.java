@@ -1,5 +1,6 @@
 package cn.lzj.nacos.client.netty;
 
+import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.client.config.DiscoveryProperties;
 import cn.lzj.nacos.client.core.HostReactor;
 import cn.lzj.nacos.client.naming.NacosNamingService;
@@ -76,7 +77,7 @@ public class NettyClient {
                     return new ChannelHandler[]{
                             new MessageEncoder(),//编码器
                             this,
-                            new IdleStateHandler(0,5,0, TimeUnit.SECONDS),
+                            new IdleStateHandler(0, Constants.DEFAULT_SEND_HEART_BEAT_INTERVAL,0, TimeUnit.SECONDS),
                             idleStateTrigger,
                             new MessageDecoder(),//解码器
                             new HeartBeatClientHandler(hostReactor)

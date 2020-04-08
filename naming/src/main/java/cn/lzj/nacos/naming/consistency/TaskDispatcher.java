@@ -1,14 +1,11 @@
 package cn.lzj.nacos.naming.consistency;
 
-import cn.lzj.nacos.naming.core.GlobalExecutor;
-import org.springframework.scheduling.TaskScheduler;
+import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 
 @Component
 public class TaskDispatcher {

@@ -29,7 +29,7 @@ public class NettyServer {
 
     EventLoopGroup workerGroup;
 
-    private Channel channel;
+    public static Channel channel;
 
     private ServerBootstrap bootstrap;
 
@@ -64,13 +64,14 @@ public class NettyServer {
                             //实现userEventTriggered方法处理对应事件
                             //是针对每一个客户端的心跳连接，即你第一个客户端不断发心跳，另一个隔很久也不发心跳，还是会触发读空闲
                             pipeline.addLast(new MessageEncoder());
-                            pipeline.addLast(new IdleStateHandler(Constants.DEFAULT_HEART_BEAT_INTERVAL, 0, 0, TimeUnit.SECONDS));
+                            pipeline.addLast(new IdleStateHandler(Constants.DEFAULT_RECEIVED_HEART_BEAT_INTERVAL, 0, 0, TimeUnit.SECONDS));
                             pipeline.addLast(idleStateTrigger);
                             pipeline.addLast(new MessageDecoder());
                             pipeline.addLast(new ServerHandler(serviceManager));
                         }
                     });
              channelFuture = bootstrap.bind(9001).sync();
+             channel=channelFuture.channel();
              log.info("netty server start");
         }catch (Exception e){
 

@@ -18,7 +18,7 @@ import java.util.Map;
 
 @Data
 @Component
-@ConfigurationProperties("nacos.discovery")
+@ConfigurationProperties("registry.discovery")
 public class DiscoveryProperties {
 
     private String serverAddr;
@@ -39,7 +39,7 @@ public class DiscoveryProperties {
 
     private int serverPort = -1;
 
-    @Value("${nacos.netty.server-addr}")
+    @Value("${registry.netty.server-addr}")
     private String nettyServerAddr;
 
     private String nettyServerIp;

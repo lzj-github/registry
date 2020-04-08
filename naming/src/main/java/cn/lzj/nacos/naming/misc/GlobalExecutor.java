@@ -1,4 +1,4 @@
-package cn.lzj.nacos.naming.core;
+package cn.lzj.nacos.naming.misc;
 
 import cn.lzj.nacos.api.common.Constants;
 

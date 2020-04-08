@@ -1,5 +1,6 @@
 package cn.lzj.nacos.naming.cluster;
 
+import cn.lzj.nacos.api.common.Constants;
 import lombok.Data;
 
 @Data
@@ -14,6 +15,12 @@ public class Server {
     private boolean alive = false;
 
     private long lastRefTime = 0L;
+
+    private String lastRefTimeStr;
+
+    public String getKey() {
+        return ip + Constants.IP_PORT_SPLITER + servePort;
+    }
 
     @Override
     public boolean equals(Object o) {
