@@ -47,8 +47,8 @@ public class Constants {
     //每隔15s获取服务端最新的注册数据，把数据设置到客户端的缓存map中
     public static final long SERVICE_FOUND_REFRESH_INTEEVAL = 15;
 
-    //超过10s没收到server集群间的消息，就认为该server过期了
-    public static long SEVER_EXPIRED_MILLS = TimeUnit.SECONDS.toMillis(15);
+    //超过15s没收到server集群间的消息，就认为该server过期了
+    public static long SERVER_EXPIRED_MILLS = TimeUnit.SECONDS.toMillis(15);
 
     //server每隔3秒向集群里的其他server节点发送一次心跳
     public static int SERVER_STATUS_SYNCHRONIZATION_PERIOD_MILLIS = 3;

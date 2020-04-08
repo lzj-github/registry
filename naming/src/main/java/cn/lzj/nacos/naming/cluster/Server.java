@@ -10,6 +10,8 @@ public class Server {
 
     private int servePort;
 
+    private String site;
+
     private int weight = 1;
 
     private boolean alive = false;
