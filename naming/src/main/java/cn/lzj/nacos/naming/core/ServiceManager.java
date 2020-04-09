@@ -3,7 +3,9 @@ package cn.lzj.nacos.naming.core;
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.api.pojo.Instance;
 import cn.lzj.nacos.api.pojo.ServiceInfo;
+import cn.lzj.nacos.naming.boot.SpringContext;
 import cn.lzj.nacos.naming.consistency.ConsistencyService;
+import cn.lzj.nacos.naming.push.PushService;
 import cn.lzj.nacos.naming.push.ServiceChangeEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,7 +140,21 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         //放进内存注册表
         putService(service);
         log.info("服务注册完成，内存注册表:"+serviceMap);
+
+        //把同步的缓存map更新
+        String namespaceId=service.getNamespaceId();
+        String serviceName=service.getName();
+        List<Instance> instanceList=getService(namespaceId,serviceName).allIPs(namespaceId+"##"+serviceName);
+        Instances instances=new Instances();
+        instances.setInstanceList(instanceList);
+        consistencyService.setInstance(namespaceId+"##"+serviceName,instances);
+        log.info("更新缓存dataMap成功:"+consistencyService.getInstances());
+        //同步集群信息
+        consistencyService.notifyCluster(namespaceId+"##"+serviceName);
+
     }
+
+
 
     /**
      * 通过namespaceId拿到实例列表

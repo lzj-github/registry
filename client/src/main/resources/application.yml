@@ -10,4 +10,4 @@ spring:
   application:
     name: abcd
 server:
-  port: 8081
+  port: 8080

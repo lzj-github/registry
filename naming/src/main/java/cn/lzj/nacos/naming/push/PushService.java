@@ -11,7 +11,12 @@ public class PushService {
     @Autowired
     ApplicationEventPublisher applicationEventPublisher;
 
+    /**
+     * 有service的实例改变了
+     * @param service
+     */
     public void serviceChanged(Service service) {
         applicationEventPublisher.publishEvent(new ServiceChangeEvent(this,service));
     }
+
 }

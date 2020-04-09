@@ -4,6 +4,7 @@ import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.naming.cluster.Server;
 import cn.lzj.nacos.naming.config.NetConfig;
 import cn.lzj.nacos.naming.core.Instances;
+import cn.lzj.nacos.naming.core.ServiceManager;
 import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +39,9 @@ public class TaskDispatcher {
     @Autowired
     private Redisson redisson;
 
+    @Autowired
+    private ServiceManager serviceManager;
+
     public volatile TaskScheduler taskScheduler=new TaskScheduler();
 
     private int dataSize = 0;
@@ -55,9 +60,15 @@ public class TaskDispatcher {
 
     class TaskScheduler implements Runnable{
 
+//        private CountDownLatch countDownLatch;
+//        public TaskScheduler(CountDownLatch countDownLatch){
+//            this.countDownLatch=countDownLatch;
+//        }
+
         private BlockingQueue<String> queue = new LinkedBlockingQueue<>(128 * 1024);
 
         public void addTask(String key) {
+            //这个key不是表示啥，只是为了表示有数据进来了
             queue.offer(key);
         }
 
@@ -86,6 +97,7 @@ public class TaskDispatcher {
                     // client1向server1注册，server1的注册表有client1，client2向server2注册，server2的注册表有client2
                     // 假设server1先拿到锁，server2收到server1发来的集群同步消息，注册表这时有client1，client2
                     //然后server2拿到锁，再同步实例信息，这时server1的注册表也有client和client2了
+
                     Map<String, Instances> dataMap = consistencyService.getInstances();
                     dataSize++;
 
@@ -93,7 +105,6 @@ public class TaskDispatcher {
 
                     //新增的实例数或者删除的实例数(即发生改变的实例数)达到100时才会进行同步或者距离上次同步超过2s才会同步
                     if(dataSize==Constants.BATCH_SYNC_KEY_COUNT||(System.currentTimeMillis()-lastDispatchTime)>Constants.TASK_DISPATCH_PERIOD){
-
                         for(Server member:dataSyncer.getServers()){
                             //跳过自己
                             if(serverAddr.equals(member.getKey())){

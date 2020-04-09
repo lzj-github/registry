@@ -14,5 +14,9 @@ public interface ConsistencyService {
 
     void listen(String key, RecordListener listener);
 
+    public void setInstance(String key,Instances instances);
+
      Map<String, Instances> getInstances();
+
+    void notifyCluster(String key);
 }

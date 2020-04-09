@@ -2,6 +2,7 @@ package cn.lzj.nacos.naming.cluster;
 
 import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.naming.config.NetConfig;
+import cn.lzj.nacos.naming.consistency.ConsistencyService;
 import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import cn.lzj.nacos.naming.misc.Message;
 import cn.lzj.nacos.naming.misc.ServerSynchronizer;
@@ -47,6 +48,9 @@ public class ServerListManager {
 
     @Autowired
     private NetConfig netConfig;
+
+    @Autowired
+    private ConsistencyService consistencyService;
 
     @PostConstruct
     public void init() {
@@ -184,7 +188,7 @@ public class ServerListManager {
         if(CollectionUtils.isEmpty(allServers)){
             return;
         }
-        System.out.println(allServers);
+        //System.out.println(allServers);
         List<Server> newHealthyList=new ArrayList<>(allServers.size());
 
         long now=System.currentTimeMillis();
@@ -215,7 +219,6 @@ public class ServerListManager {
      */
     public synchronized void onReceiveServerStatus(String serverStatus) {
 
-        log.info("收到集群间的心跳:"+serverStatus);
         if(serverStatus.length()==0){
             return;
         }
@@ -230,9 +233,14 @@ public class ServerListManager {
 
         Long lastBeat=distroBeats.get(server.getKey());
         long now = System.currentTimeMillis();
+        //是否第一次来发送心跳，是的话要先加入健康队列，然后进行同步数据
+        boolean isFirst=false;
+
         if(null!=lastBeat){
             //不是第一次发送心跳,太久才发一次心跳(15s)的话也把该server节点设为非存活状态，等下次再发送一次心跳间隔小于15s才设置为存活状态
             server.setAlive(now-lastBeat<Constants.SERVER_EXPIRED_MILLS);
+        }else{
+            isFirst=true;
         }
         distroBeats.put(server.getKey(),now);
 
@@ -268,6 +276,16 @@ public class ServerListManager {
 
         //覆盖原来的list
         distroConfig.put(server.getSite(),tempServerList);
+        if(isFirst){
+            //第一次发送心跳，把当前的server的内存注册表同步给该server,同时也同步一次给集群的其他server，跳过自己
+            //因为进行集群同步时，只会发给健康的实例，这时因为还没有进行心跳检查，该server还没加入健康的列表里面去，所以在这里先进行心跳检查
+            //不然该实例还没加入健康的实例，所以还是不会立刻发送
+            checkHeartBeat();
+            String serverAddr=netConfig.getServerIp()+ Constants.IP_PORT_SPLITER+netConfig.getServerPort();
+            if(!server.getKey().equals(serverAddr)){
+                consistencyService.notifyCluster(server.getKey());
+            }
+        }
     }
 
     /**

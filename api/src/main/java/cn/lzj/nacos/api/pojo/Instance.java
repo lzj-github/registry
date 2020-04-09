@@ -13,10 +13,6 @@ public class Instance {
 
     private int port;
 
-    private boolean healthy = true;
-
-    private boolean ephemeral = true;
-
     private String serviceName;
 
     private String clusterName;

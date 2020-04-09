@@ -2,11 +2,11 @@ package cn.lzj.nacos.naming.consistency;
 
 
 import cn.lzj.nacos.naming.core.Instances;
-import cn.lzj.nacos.naming.core.Service;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
@@ -14,8 +14,9 @@ import java.util.concurrent.*;
 
 @Slf4j
 @org.springframework.stereotype.Service("consistencyService")
-public class ConsistencyServiceImpl implements ConsistencyService{
+public class ConsistencyServiceImpl implements ConsistencyService {
 
+    //Map<namespaceId+"##"+serviceName,Instances>
     private Map<String, Instances> dataMap = new ConcurrentHashMap<>(1024);
 
     @Autowired
@@ -55,6 +56,8 @@ public class ConsistencyServiceImpl implements ConsistencyService{
         //添加观察者，listener就是Service实例
         listeners.get(key).add(listener);
     }
+
+
 
     class Notifier implements Runnable{
 
@@ -98,6 +101,10 @@ public class ConsistencyServiceImpl implements ConsistencyService{
     @Override
     public void put(String key, Instances instances) {
         onPut(key,instances);
+    }
+
+    @Override
+    public void notifyCluster(String key){
         //通知集群
         taskDispatcher.addTask(key);
     }
@@ -106,6 +113,16 @@ public class ConsistencyServiceImpl implements ConsistencyService{
         dataMap.put(key,instances);
         //把实例列表添加到后台线程的阻塞队列里面
         notifier.addTask(key,ApplyAction.CHANGE);
+    }
+
+    /**
+     * 修改完内存注册表再来把当前dataMap修改为最新值
+     * @param key
+     * @param instances
+     */
+    @Override
+    public void setInstance(String key, Instances instances){
+        dataMap.put(key,instances);
     }
 
     /**
