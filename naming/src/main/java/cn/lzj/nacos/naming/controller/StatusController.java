@@ -14,7 +14,6 @@ public class StatusController {
 
     @RequestMapping("/server/status")
     public String serverStatus(@RequestParam String serverStatus) {
-        System.out.println("serverStatus:"+serverStatus);
         serverListManager.onReceiveServerStatus(serverStatus);
         return "ok";
     }

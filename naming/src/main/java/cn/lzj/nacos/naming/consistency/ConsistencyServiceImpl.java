@@ -109,6 +109,15 @@ public class ConsistencyServiceImpl implements ConsistencyService{
     }
 
     /**
+     * 返回实例列表
+     * @return
+     */
+    @Override
+    public Map<String, Instances> getInstances(){
+        return dataMap;
+    }
+
+    /**
      *暂时没用到该方法，因为添加和删除都使用onPut方法了
      * @param key
      */

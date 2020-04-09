@@ -4,7 +4,7 @@ import cn.lzj.nacos.api.common.Constants;
 import cn.lzj.nacos.naming.config.NetConfig;
 import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import cn.lzj.nacos.naming.misc.Message;
-import cn.lzj.nacos.naming.misc.ServerStatusSynchronizer;
+import cn.lzj.nacos.naming.misc.ServerSynchronizer;
 import cn.lzj.nacos.naming.misc.Synchronizer;
 import cn.lzj.nacos.naming.utils.SystemUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ServerListManager {
     //可用的server节点
     private List<Server> healthyServers = new ArrayList<>();
 
-    private Synchronizer synchronizer = new ServerStatusSynchronizer();
+    private Synchronizer synchronizer = new ServerSynchronizer();
 
     //Map<serverIp:serverPort,timestamps>
     private Map<String, Long> distroBeats = new ConcurrentHashMap<>(16);
@@ -167,7 +167,7 @@ public class ServerListManager {
             }catch (Exception e) {
                 log.error("发送server状态的过程中出现了错误:", e);
             } finally {
-                //3s后再执行一次
+                //5s后再执行一次
                 GlobalExecutor.registerServerStatusReporter(this, Constants.SERVER_STATUS_SYNCHRONIZATION_PERIOD_MILLIS);
             }
         }
@@ -178,36 +178,36 @@ public class ServerListManager {
      */
     private void checkHeartBeat() {
 
-        log.debug("检查server集群间的心跳");
+        log.info("检查server集群间的心跳");
 
         List<Server> allServers=distroConfig.get(LOCALHOST_SITE);
+        if(CollectionUtils.isEmpty(allServers)){
+            return;
+        }
+        System.out.println(allServers);
         List<Server> newHealthyList=new ArrayList<>(allServers.size());
 
         long now=System.currentTimeMillis();
-        //健康的servers列表有没有发生改变的标志
-        boolean changed=false;
         for(Server s:allServers){
             Long lastBeat=distroBeats.get(s.getKey());
             if(null==lastBeat){
                 continue;
             }
             s.setAlive(now-lastBeat<Constants.SERVER_EXPIRED_MILLS);
-            if(s.isAlive()&&!healthyServers.contains(s)){
-                //原来不在健康的server列表里，加入进去
+            if(s.isAlive()&&!newHealthyList.contains(s)){
+                //把存活的server实例加入健康的server列表
                 newHealthyList.add(s);
-                changed=true;
-            }else if(!s.isAlive()&&healthyServers.contains(s)){
-                //原来在健康的server列表里面，现在是不存活状态了，把这个server实例剔除
-                changed=true;
             }
         }
-        if(changed){
+        //和原来的健康server列表发生改变，就要修改健康server列表
+        if(!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)){
             healthyServers=newHealthyList;
             notifyListeners();
         }
 
 
     }
+
 
     /**
      * 别的server发送状态后调用该方法，加锁是因为是异步发送http请求的
@@ -219,8 +219,6 @@ public class ServerListManager {
         if(serverStatus.length()==0){
             return;
         }
-
-        List<Server> tempServerList=new ArrayList<>();
 
         //cluster_status#192.168.153.1:9002#1586336129841#
         String[] params=serverStatus.split("#");
@@ -248,7 +246,8 @@ public class ServerListManager {
             distroConfig.put(server.getSite(),list);
         }
 
-        List<Server> tmpServerList = new ArrayList<>();
+
+        List<Server> tempServerList = new ArrayList<>();
         //更改原来存在distroConfig中server更新后的时间戳
         for(Server s:list){
             String serverId=s.getKey();
@@ -256,21 +255,34 @@ public class ServerListManager {
             //原来已经存在了
             if(serverId.equals(newServerId)){
                 //更新发送心跳的server最新的数据
-                tmpServerList.add(server);
+                tempServerList.add(server);
                 continue;
             }
             //把不是发送心跳的server列表加回去
-            tmpServerList.add(s);
+            tempServerList.add(s);
         }
+        //上面的循环如果还没把当前发送心跳的server加进去，就在这里加进去
+        if (!tempServerList.contains(server)) {
+            tempServerList.add(server);
+        }
+
         //覆盖原来的list
         distroConfig.put(server.getSite(),tempServerList);
+    }
+
+    /**
+     * 返回健康的server实例列表
+     * @return
+     */
+    public List<Server> getHealthyServers() {
+        return healthyServers;
     }
 
     private void notifyListeners() {
         GlobalExecutor.notifyServerListChange(new Runnable() {
             @Override
             public void run() {
-                //通知其他节点集群列表更改了
+                //通知观察者集群列表更改了
                 for (ServerChangeListener listener : listeners) {
                     listener.onChangeServerList(servers);
                     listener.onChangeHealthyServerList(healthyServers);

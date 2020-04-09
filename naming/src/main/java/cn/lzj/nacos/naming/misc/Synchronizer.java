@@ -13,4 +13,9 @@ public interface Synchronizer {
      * 使用消息密钥从服务器获取消息
      */
     Message get(String serverIP, String key);
+
+    /**
+     * 同步实例数据
+     */
+    public  boolean syncData(String serverIp,byte[] data) ;
 }

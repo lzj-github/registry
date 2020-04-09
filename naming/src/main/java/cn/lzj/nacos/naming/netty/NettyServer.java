@@ -2,6 +2,7 @@ package cn.lzj.nacos.naming.netty;
 
 
 import cn.lzj.nacos.api.common.Constants;
+import cn.lzj.nacos.naming.config.NetConfig;
 import cn.lzj.nacos.naming.core.ServiceManager;
 import cn.lzj.nacos.naming.netty.handler.ServerHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -41,6 +42,9 @@ public class NettyServer {
     @Autowired
     private ServiceManager serviceManager;
 
+    @Autowired
+    private NetConfig netConfig;
+
     public void start(){
         try{
             //创建两个线程组bossGroup和workerGroup, 含有的子线程NioEventLoop的个数默认为cpu核数的两倍
@@ -70,7 +74,7 @@ public class NettyServer {
                             pipeline.addLast(new ServerHandler(serviceManager));
                         }
                     });
-             channelFuture = bootstrap.bind(9001).sync();
+             channelFuture = bootstrap.bind(netConfig.getNettyPort()).sync();
              channel=channelFuture.channel();
              log.info("netty server start");
         }catch (Exception e){

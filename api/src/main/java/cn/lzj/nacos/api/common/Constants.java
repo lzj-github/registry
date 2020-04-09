@@ -50,7 +50,13 @@ public class Constants {
     //超过15s没收到server集群间的消息，就认为该server过期了
     public static long SERVER_EXPIRED_MILLS = TimeUnit.SECONDS.toMillis(15);
 
-    //server每隔3秒向集群里的其他server节点发送一次心跳
-    public static int SERVER_STATUS_SYNCHRONIZATION_PERIOD_MILLIS = 3;
+    //server每隔5秒向集群里的其他server节点发送一次心跳
+    public static int SERVER_STATUS_SYNCHRONIZATION_PERIOD_MILLIS = 5;
+
+    //每隔2s就从阻塞队列中拿取数据，看有没有实例信息的变更，以便来同步到其他集群节点
+    public static int TASK_DISPATCH_PERIOD = 2000;
+
+    //新注册的实例或者删除实例的数值达到该数值才开始同步集群，批量异步同步，减少IO次数
+    public static int BATCH_SYNC_KEY_COUNT = 100;
 
 }

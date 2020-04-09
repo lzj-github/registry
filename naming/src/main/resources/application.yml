@@ -2,7 +2,7 @@ spring:
   application:
     name: server
 netty:
-  addr: localhost:9001
+  addr: localhost:9003
 
 server:
   port: 9002

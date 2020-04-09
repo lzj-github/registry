@@ -6,13 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import reactor.util.Loggers;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-public class ServerStatusSynchronizer implements Synchronizer {
+public class ServerSynchronizer implements Synchronizer {
 
 
     @Override
@@ -20,9 +22,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
 
         Map<String,String> params=new HashMap<>(2);
         params.put("serverStatus",msg.getData());
-        System.out.println(params);
+        //{serverStatus=cluster_status#192.168.153.1:9000#1586351624092#}
+
         String url="http://"+serverIP+"/server/status";
-        System.out.println(url);
+        //http://192.168.153.1:9000/server/status
+
         try{
             HttpClientUtils.asyncHttpGet(url, null, params, new AsyncCompletionHandler() {
                 @Override
@@ -44,7 +48,34 @@ public class ServerStatusSynchronizer implements Synchronizer {
     }
 
     @Override
+    public boolean syncData(String serverIp, byte[] data) {
+        log.info("开始同步数据......");
+        Map<String, String> headers = new HashMap<>(128);
+
+        headers.put("Accept-Encoding", "gzip,deflate,sdch");
+        headers.put("Connection", "Keep-Alive");
+        headers.put("Content-Encoding", "gzip");
+
+        try {
+            HttpClientUtils.HttpResult result = HttpClientUtils.httpPutLarge("http://" + serverIp + "/data/sync", headers, data);
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return true;
+            }
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return true;
+            }
+            throw new IOException("请求失败，API:" +"http://" + serverIp + "/data/sync"+ ". code:"
+                    + result.code + " msg: " + result.content);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    @Override
     public Message get(String serverIP, String key) {
         return null;
     }
+
 }

@@ -3,6 +3,8 @@ package cn.lzj.nacos.naming.consistency;
 import cn.lzj.nacos.naming.core.Instances;
 import cn.lzj.nacos.naming.core.Service;
 
+import java.util.Map;
+
 public interface ConsistencyService {
 
 
@@ -11,4 +13,6 @@ public interface ConsistencyService {
     void remove(String key);
 
     void listen(String key, RecordListener listener);
+
+     Map<String, Instances> getInstances();
 }

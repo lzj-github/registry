@@ -6,13 +6,20 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -26,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -145,6 +153,56 @@ public class HttpClientUtils {
 
         return sb.toString();
     }
+
+    public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
+        try {
+            HttpClientBuilder builder = HttpClients.custom();
+            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+
+            CloseableHttpClient httpClient = builder.build();
+            HttpPut httpPut = new HttpPut(url);
+
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpPut.setHeader(entry.getKey(), entry.getValue());
+            }
+
+            httpPut.setEntity(new StringEntity(new String(content, "UTF-8"), ContentType.create("application/json", "UTF-8")));
+
+            HttpResponse response = httpClient.execute(httpPut);
+            HttpEntity entity = response.getEntity();
+
+            HeaderElement[] headerElements = entity.getContentType().getElements();
+            String charset = headerElements[0].getParameterByName("charset").getValue();
+
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                    IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+        } catch (Exception e) {
+            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+        }
+    }
+
+    /**
+     * 返回结果的封装
+     */
+    public static class HttpResult {
+        final public int code;
+        final public String content;
+        final private Map<String, String> respHeaders;
+
+        public HttpResult(int code, String content, Map<String, String> respHeaders) {
+            this.code = code;
+            this.content = content;
+            this.respHeaders = respHeaders;
+        }
+
+        public String getHeader(String name) {
+            return respHeaders.get(name);
+        }
+    }
+
+
+
+
 
     /**
      * 同步发送get请求
