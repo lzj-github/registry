@@ -25,8 +25,7 @@ public class DataSyncer {
     @Autowired
     private ServerListManager serverListManager;
 
-    @Autowired
-    private Redisson redisson;
+
 
     private Synchronizer synchronizer = new ServerSynchronizer();
 
@@ -42,7 +41,29 @@ public class DataSyncer {
                 byte[] data=JSON.toJSONBytes(syncTask.getDataMap());
                 //开始发送同步信息
                 boolean success = synchronizer.syncData(syncTask.getTargetServer(), data);
+                if(!success){
+                    SyncTask syncTask1=new SyncTask();
+                    syncTask1.setDataMap(syncTask.getDataMap());
+                    syncTask1.setTargetServer(syncTask.getTargetServer());
+                    retrySync(syncTask1,delay);
+                }
             }
         },delay);
+    }
+
+    /**
+     * 失败重发
+     * @param syncTask
+     */
+    public void retrySync(SyncTask syncTask,long delay) {
+        Server server = new Server();
+        server.setIp(syncTask.getTargetServer().split(":")[0]);
+        server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
+        if (!getServers().contains(server)) {
+            // 如果服务器不在健康服务器列表中，就忽略这次同步任务
+            return;
+        }
+
+        submit(syncTask,delay);
     }
 }

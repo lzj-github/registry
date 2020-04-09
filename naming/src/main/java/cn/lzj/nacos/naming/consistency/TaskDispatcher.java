@@ -7,8 +7,11 @@ import cn.lzj.nacos.naming.core.Instances;
 import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.Redisson;
+import org.redisson.api.RLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.util.Loggers;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -30,6 +33,9 @@ public class TaskDispatcher {
 
     @Autowired
     private NetConfig netConfig;
+
+    @Autowired
+    private Redisson redisson;
 
     public volatile TaskScheduler taskScheduler=new TaskScheduler();
 
@@ -58,11 +64,12 @@ public class TaskDispatcher {
         @Override
         public void run() {
             while(true){
+                String lockKey="lockKey";
+                RLock redissonLock=redisson.getLock(lockKey);
                 try{
 
                     //获取并移出队列的头元素，若队列为空，则返回null,2s超时时间
                     String key = queue.poll(Constants.TASK_DISPATCH_PERIOD, TimeUnit.MILLISECONDS);
-                    Map<String, Instances> dataMap = consistencyService.getInstances();
 
                     //没有实例新增或删除，不用同步，跳过
                     if (StringUtils.isBlank(key)) {
@@ -72,12 +79,21 @@ public class TaskDispatcher {
                     if(dataSyncer.getServers()==null||dataSyncer.getServers().isEmpty()){
                         continue;
                     }
+                    //同时只能一个server同步数据
+                    redissonLock.lock();
+
+                    //这里拿到的实例数据是暂时来说最新的，假如有两个server，两个client，
+                    // client1向server1注册，server1的注册表有client1，client2向server2注册，server2的注册表有client2
+                    // 假设server1先拿到锁，server2收到server1发来的集群同步消息，注册表这时有client1，client2
+                    //然后server2拿到锁，再同步实例信息，这时server1的注册表也有client和client2了
+                    Map<String, Instances> dataMap = consistencyService.getInstances();
                     dataSize++;
 
                     String serverAddr=netConfig.getServerIp()+ Constants.IP_PORT_SPLITER+netConfig.getServerPort();
 
                     //新增的实例数或者删除的实例数(即发生改变的实例数)达到100时才会进行同步或者距离上次同步超过2s才会同步
                     if(dataSize==Constants.BATCH_SYNC_KEY_COUNT||(System.currentTimeMillis()-lastDispatchTime)>Constants.TASK_DISPATCH_PERIOD){
+
                         for(Server member:dataSyncer.getServers()){
                             //跳过自己
                             if(serverAddr.equals(member.getKey())){
@@ -89,7 +105,6 @@ public class TaskDispatcher {
                             log.info("向"+syncTask.getTargetServer()+"开始同步数据:"+syncTask.getDataMap());
                             //开始同步
                             dataSyncer.submit(syncTask,0);
-
                         }
                         //重置同步时间和要修改的实例数，以便下次重新统计
                         lastDispatchTime=System.currentTimeMillis();
@@ -97,11 +112,10 @@ public class TaskDispatcher {
                     }
 
 
-
-
-
                 }catch (Exception e){
-
+                    log.error("同步数据失败:", e);
+                }finally {
+                    redissonLock.unlock();
                 }
             }
         }
