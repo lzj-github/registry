@@ -21,30 +21,24 @@ import java.util.Map;
 @ConfigurationProperties("registry.discovery")
 public class DiscoveryProperties {
 
-    private String serverAddr;
-
     private String namespace;
+
+    private String clusterName;
 
     @Value("${spring.application.name}")
     private String service;
 
-    private float weight = 1;
-
-    private String clusterName ;
-
     private Map<String, String> metadata = new HashMap<>();
 
-    //server的ip
-    private String serverIp;
-
-    private int serverPort = -1;
+    private String serverAddr;
 
     @Value("${registry.netty.server-addr}")
     private String nettyServerAddr;
 
-    private String nettyServerIp;
+    //服务端的ip映射netty端的ip，用来选择server连接时用到
+    //Map<serverIp,nettyIp>
+    private Map<String,String> mappingMap=new HashMap<>();
 
-    private int nettyServerPort;
 
     //当前服务的ip
     private String clientIp;
@@ -53,26 +47,43 @@ public class DiscoveryProperties {
     @Value("${server.port}")
     private int clientPort;
 
-    //每个实例时启动时使用时间戳，来决定请求发给哪个Server
-    private long startTimeStamp;
-
     @PostConstruct
-    public void init(){
+    public void init() throws UnknownHostException {
         if(namespace==null){
             namespace= Constants.DEFAULT_NAMESPACE;
         }
-        this.serverIp=serverAddr.split(":")[0];
-        this.serverPort=Integer.valueOf(serverAddr.split(":")[1]);
-        this.clusterName= Constants.DEFAULT_GROUP;
-        nettyServerIp=nettyServerAddr.split(":")[0];
-        nettyServerPort=Integer.valueOf(nettyServerAddr.split(":")[1]);
-        try {
-            //本机的ip
-            clientIp= InetAddress.getLocalHost().getHostAddress().toString();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        if(clusterName==null){
+            clusterName= Constants.DEFAULT_GROUP;
         }
-        startTimeStamp=System.currentTimeMillis();
+
+        //证明有集群
+        if(serverAddr.contains(",")&&nettyServerAddr.contains(",")){
+            String[] servers = serverAddr.split(",");
+            String[] nettyServers=nettyServerAddr.split(",");
+            for(int i=0;i<servers.length;i++){
+                if(servers[i].startsWith("localhost")){
+                    //localhost换成192.168.153.1这种
+                    servers[i]=InetAddress.getLocalHost().getHostAddress().toString()+":"+servers[i].split(":")[1];
+                }
+                if(nettyServers[i].startsWith("localhost")){
+                    nettyServers[i]=InetAddress.getLocalHost().getHostAddress().toString()+":"+nettyServers[i].split(":")[1];
+                }
+                mappingMap.put(servers[i],nettyServers[i]);
+            }
+        }else{
+            //只写了一台server的ip
+            if(serverAddr.startsWith("localhost")){
+                serverAddr=InetAddress.getLocalHost().getHostAddress().toString()+":"+serverAddr.split(":")[1];
+            }
+            if(nettyServerAddr.startsWith("localhost")){
+                nettyServerAddr=InetAddress.getLocalHost().getHostAddress().toString()+":"+nettyServerAddr.split(":")[1];
+            }
+            mappingMap.put(serverAddr,nettyServerAddr);
+        }
+
+        //本机的ip
+        clientIp= InetAddress.getLocalHost().getHostAddress().toString();
+
     }
 
 }

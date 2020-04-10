@@ -2,9 +2,9 @@
 
 registry:
   discovery:
-    server-addr: localhost:9000
+    server-addr: localhost:9000,localhost:9002
   netty:
-    server-addr: localhost:9001
+    server-addr: localhost:9001,localhost:9003
 
 spring:
   application:

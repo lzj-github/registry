@@ -2,21 +2,15 @@ package cn.lzj.nacos.naming.consistency;
 
 import cn.lzj.nacos.naming.cluster.Server;
 import cn.lzj.nacos.naming.cluster.ServerListManager;
-import cn.lzj.nacos.naming.core.Instances;
 import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import cn.lzj.nacos.naming.misc.ServerSynchronizer;
 import cn.lzj.nacos.naming.misc.Synchronizer;
 import com.alibaba.fastjson.JSON;
-import com.fasterxml.jackson.datatype.jsr310.ser.InstantSerializer;
-import org.redisson.Redisson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @DependsOn("serverListManager")

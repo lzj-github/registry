@@ -1,7 +1,7 @@
 package cn.lzj.nacos.client.netty.handler;
 
 import cn.lzj.nacos.client.config.DiscoveryProperties;
-import cn.lzj.nacos.client.naming.NacosNamingService;
+import cn.lzj.nacos.client.naming.NamingServiceImpl;
 import cn.lzj.nacos.client.netty.ChannelHandlerHolder;
 import cn.lzj.nacos.client.netty.ConnectionListener;
 import cn.lzj.nacos.client.netty.NettyClient;
@@ -13,9 +13,8 @@ import io.netty.util.Timer;
 import io.netty.util.TimerTask;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
@@ -29,11 +28,14 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
     private volatile boolean reconnect = true;
     private int attempts;//重试次数
 
+    private int[] reconnectGapTime={1,2,3,4,5,10,15,30,60,120,180,300};
+
     private DiscoveryProperties discoveryProperties;
 
-    private NacosNamingService nacosNamingService;
+    private NamingServiceImpl nacosNamingService;
 
-    public ConnectionWatchDog(Bootstrap bootstrap, Timer timer, DiscoveryProperties discoveryProperties, NacosNamingService nacosNamingService, boolean reconnect) {
+
+    public ConnectionWatchDog(Bootstrap bootstrap, Timer timer, DiscoveryProperties discoveryProperties, NamingServiceImpl nacosNamingService, boolean reconnect) {
         this.bootstrap = bootstrap;
         this.timer = timer;
         this.discoveryProperties = discoveryProperties;
@@ -58,11 +60,31 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
         log.error("掉线了...");
         if(reconnect){
             log.error("链接关闭，将进行重连...");
+            if(attempts>=5){
+                //重连了5次该server还是失败的话，就从server集群中选取其中一个来连接
+                //先把该server从可选的nettyServers去掉
+                NettyClient.nettyServers.remove(NettyClient.nettyServer);
+                String serverIp = NettyClient.getKeyByValue(NettyClient.nettyServer);
+                NettyClient.servers.remove(serverIp);
+                NettyClient.mappingMap.remove(serverIp);
+                Random random=new Random(System.currentTimeMillis());
+                //重新选取一个server来来连接，而且在client存的可用server列表还有server的情况下
+                if(NettyClient.nettyServers.size()>0){
+                    NettyClient.index=random.nextInt(NettyClient.nettyServers.size());
+                    NettyClient.nettyServer=NettyClient.nettyServers.get(NettyClient.index);
+                    attempts=0;
+                    log.warn("尝试连接"+NettyClient.getKeyByValue(NettyClient.nettyServer));
+                }else{
+                    log.error("没有可用的server可以尝试来连接，请通知服务器管理员或者尝试重新启动");
+                }
+            }
             if (attempts < 12) {
-                attempts++;
                 //重连的间隔时间会越来越长
-                int timeout = 2 << attempts;
-                timer.newTimeout(this, timeout, TimeUnit.MILLISECONDS);
+                //正常来说，假如重连的server都不可用，那么只有对NettyClient.nettyServer列表中最后一个才会用到attempts中后面的几个重试时间
+                //其他都是在5那里就重新置0了
+                int timeout = reconnectGapTime[attempts];
+                timer.newTimeout(this, timeout, TimeUnit.SECONDS);
+                attempts++;
             }
         }
         ctx.fireChannelInactive();
@@ -79,8 +101,9 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
             }
         });
         //重连
-        ChannelFuture channelFuture = bootstrap.connect(discoveryProperties.getNettyServerIp(), discoveryProperties.getNettyServerPort());
+        ChannelFuture channelFuture = bootstrap.connect(NettyClient.nettyServer.split(":")[0], Integer.parseInt(NettyClient.nettyServer.split(":")[1]));
         channelFuture.addListener(new ConnectionListener()).sync();
+        log.info("重新连接上了"+NettyClient.getKeyByValue(NettyClient.nettyServer));
         //重新连接后channel会改变
         NettyClient.channel=channelFuture.channel();
         //System.out.println("channel:"+NettyClient.channel);
@@ -89,6 +112,7 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
                 discoveryProperties.getClientIp(), discoveryProperties.getClientPort(), discoveryProperties.getNamespace());
 
     }
+
 
 
 

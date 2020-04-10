@@ -7,6 +7,7 @@ import cn.lzj.nacos.client.core.HostReactor;
 import cn.lzj.nacos.client.netty.MessageProtocol;
 import cn.lzj.nacos.client.netty.NettyClient;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -51,7 +52,8 @@ public class HeartBeatClientHandler extends SimpleChannelInboundHandler<MessageP
         if(msgStr.startsWith(Constants.DISCONNECT_ROUND)&& msgStr.endsWith(Constants.DISCONNECT_ROUND)){
             log.error("客户端接收到服务端传来断开连接的消息:"+getRealMsg(msgStr));
         }else if(msgStr.startsWith(Constants.SERVICE_FOUND_ROUND)&&msgStr.endsWith(Constants.SERVICE_FOUND_ROUND)){
-            Map<String, ServiceInfo> services= JSON.parseObject(getRealMsg(msgStr), ConcurrentHashMap.class);
+            Map<String, ServiceInfo> services= JSON.parseObject(getRealMsg(msgStr),new TypeReference<Map<String,ServiceInfo>>(){});
+            //不能这样转 JSON.parseObject(getRealMsg(msgStr), ConcurrentHashMap.class);
             log.info("收到服务端传来的服务列表:"+services);
             hostReactor.putService(services);
         }

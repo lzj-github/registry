@@ -2,13 +2,10 @@ package cn.lzj.nacos.client.controller;
 
 import cn.lzj.nacos.client.config.DiscoveryProperties;
 import cn.lzj.nacos.client.core.HostReactor;
-import cn.lzj.nacos.client.naming.NacosNamingService;
+import cn.lzj.nacos.client.naming.NamingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 @RestController
 public class TestController {
@@ -17,7 +14,7 @@ public class TestController {
     DiscoveryProperties discoveryProperties;
 
     @Autowired
-    NacosNamingService  nacosNamingService;
+    NamingServiceImpl nacosNamingService;
 
     @Autowired
     HostReactor hostReactor;

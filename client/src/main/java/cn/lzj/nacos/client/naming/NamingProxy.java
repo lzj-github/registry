@@ -42,7 +42,7 @@ public class NamingProxy {
      * @param namespaceId
      * @return
      */
-    public void queryList(String namespaceId){//, List<String> clusters) {
+    public void queryList(String namespaceId){
         Channel channel=NettyClient.channel;
         //int index=random.nextInt(clusters.size());
         //String server=clusters.get(index);

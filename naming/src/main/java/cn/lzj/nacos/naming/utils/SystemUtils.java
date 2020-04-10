@@ -5,16 +5,19 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class SystemUtils {
 
     public static void main(String[] args) throws IOException {
         System.out.println(readClusterConf());
+        System.out.println(mappingMap);
     }
+
     private static BufferedReader bufferedReader;
+
+    //serverIp与nettyIP得映射关系
+    public static Map<String, String> mappingMap = new HashMap<>();
 
     public static List<String> readClusterConf() throws IOException {
         List<String> serversList = new ArrayList<String>();
@@ -23,37 +26,36 @@ public class SystemUtils {
             //获取resource目录下的文件路径
             Resource resource = new ClassPathResource("conf/cluster.conf");
             File file = resource.getFile();
-            Reader reader=new InputStreamReader(new FileInputStream(file));
-            bufferedReader=new BufferedReader(reader);
-            String line=null;
-            while((line=bufferedReader.readLine())!=null){
+            Reader reader = new InputStreamReader(new FileInputStream(file));
+            bufferedReader = new BufferedReader(reader);
+            String line = null;
+            while ((line = bufferedReader.readLine()) != null) {
                 lines.add(line.trim());
             }
             String comment = "#";
-            for(String line1:lines){
-                String instance=line1.trim();
-                if(instance.startsWith(comment)){
+            for (String line1 : lines) {
+                String instance = line1.trim();
+                if (instance.startsWith(comment)) {
                     //注释跳过   如 # this is ip list
                     continue;
                 }
-                if(instance.contains(comment)){
+                if (instance.contains(comment)) {
                     // 192.168.153.128:8848 # Instance A
-                    instance=instance.substring(0,instance.indexOf(comment));
-                    instance=instance.trim();
+                    instance = instance.substring(0, instance.indexOf(comment));
+                    instance = instance.trim();
                 }
-                int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
-                if (multiIndex > 0) {
-                    // 格式： ip1:port,ip2:port  # multi inline
-                    serversList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
-                } else {
-                    // 格式： 192.168.153.128:8848
-                    serversList.add(instance);
-                }
+
+                // 格式： 192.168.153.1:9000|192.168.153.1:9001
+                String serverIp = instance.split(",")[0];
+                String nettyServerIp = instance.split(",")[1];
+                serversList.add(serverIp);
+                mappingMap.put(serverIp, nettyServerIp);
             }
+
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             bufferedReader.close();
         }
 
