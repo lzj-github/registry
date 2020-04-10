@@ -52,6 +52,9 @@ public class ServerListManager {
     @Autowired
     private ConsistencyService consistencyService;
 
+    //判断是否刚启动或者刚重启，第一次发送心跳
+    private static boolean isFisrtSendHeartBeat=true;
+
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
@@ -145,7 +148,7 @@ public class ServerListManager {
                 //自己当前的ip加端口
                 String serverAddr=netConfig.getServerIp()+ Constants.IP_PORT_SPLITER+netConfig.getServerPort();
                 //心跳信息
-                String status=LOCALHOST_SITE+"#"+serverAddr+"#"+System.currentTimeMillis()+"#";
+                String status=LOCALHOST_SITE+"#"+serverAddr+"#"+System.currentTimeMillis()+"#"+isFisrtSendHeartBeat+"#";
 
                 //检查一下该server下收到的心跳，把自己的健康server列表更新
                 checkHeartBeat();
@@ -168,6 +171,7 @@ public class ServerListManager {
 
                     }
                 }
+                isFisrtSendHeartBeat=false;
             }catch (Exception e) {
                 log.error("发送server状态的过程中出现了错误:", e);
             } finally {
@@ -233,15 +237,16 @@ public class ServerListManager {
 
         Long lastBeat=distroBeats.get(server.getKey());
         long now = System.currentTimeMillis();
-        //是否第一次来发送心跳，是的话要先加入健康队列，然后进行同步数据
-        boolean isFirst=false;
+        //是否第一次来发送心跳或者已经发过心跳但是重启了，是的话要先加入健康队列，然后进行同步数据
+        boolean isFirst=(params[3].equals("true"));
 
-        if(null!=lastBeat){
+        if(null!=lastBeat) {
             //不是第一次发送心跳,太久才发一次心跳(15s)的话也把该server节点设为非存活状态，等下次再发送一次心跳间隔小于15s才设置为存活状态
-            server.setAlive(now-lastBeat<Constants.SERVER_EXPIRED_MILLS);
-        }else{
-            isFirst=true;
+            server.setAlive(now - lastBeat < Constants.SERVER_EXPIRED_MILLS);
         }
+//        }else{
+//            isFirst=true;
+//        }
         distroBeats.put(server.getKey(),now);
 
         Date date=new Date(Long.parseLong(params[2]));

@@ -67,6 +67,10 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         if(instanceList==null){
             instanceList=new ArrayList<>();
         }
+        //如果原本已经在注册表中了，就不用再注册了，在这里去重
+        if(instanceList.contains(instance)){
+            return;
+        }
         instanceList.add(instance);
         //不能在这里就把实例加到service里的list里面，因为防止同时多个来注册，会覆盖之前的
         //添加新的实例到服务里的实例list里面

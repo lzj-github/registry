@@ -107,7 +107,8 @@ abstract public class ConnectionWatchDog extends ChannelInboundHandlerAdapter im
         //重新连接后channel会改变
         NettyClient.channel=channelFuture.channel();
         //System.out.println("channel:"+NettyClient.channel);
-        //重新注册服务
+
+        //因为防止只有一个server节点，所以重新注册服务，要去重!!!
         nacosNamingService.registerInstance(discoveryProperties.getService(), discoveryProperties.getClusterName(),
                 discoveryProperties.getClientIp(), discoveryProperties.getClientPort(), discoveryProperties.getNamespace());
 

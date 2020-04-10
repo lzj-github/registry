@@ -129,6 +129,7 @@ public class NettyClient {
             //启动客户端去连接服务器端,添加启动重连监听器
             // 通过sync方法同步等待通道关闭处理完毕，这里会阻塞等待通道关闭完成
             channelFuture = bootstrap.connect(nettyServer.split(":")[0], Integer.parseInt(nettyServer.split(":")[1])).addListener(new ConnectionListener()).sync();
+            log.info("连接上了"+NettyClient.getKeyByValue(NettyClient.nettyServer));
             //得到 channel
             channel = channelFuture.channel();
             log.info("连接服务器成功...");
