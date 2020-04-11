@@ -32,13 +32,6 @@ public class Service implements RecordListener {
 
     public void init() {
         log.info("Service实例的初始化方法被调用了");
-//
-//        HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
-//
-//        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-//            entry.getValue().setService(this);
-//            entry.getValue().init();
-//        }
     }
 
     /**

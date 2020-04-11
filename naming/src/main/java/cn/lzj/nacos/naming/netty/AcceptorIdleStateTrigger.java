@@ -33,7 +33,7 @@ public class AcceptorIdleStateTrigger extends SimpleChannelInboundHandler<Messag
     /**
      * 服务端要对心跳包做出响应，其实给客户端最好的回复就是“不回复”，这样可以服务端的压力，
      * 假如有10w个空闲Idle的连接，那么服务端光发送心跳回复，则也是费事的事情，那么怎么才能告诉客户端它还活着呢，
-     * 其实很简单，因为5s服务端都会收到来自客户端的心跳信息，那么如果15秒内收不到，服务端可以认为客户端挂了，可以close链路
+     * 其实很简单，因为5s服务端都会收到来自客户端的心跳信息，那么如果30秒内收不到，服务端可以认为客户端挂了，可以close链路
      */
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
@@ -46,7 +46,7 @@ public class AcceptorIdleStateTrigger extends SimpleChannelInboundHandler<Messag
                 System.out.println("readIdleTimes:" + readIdleTimes);
                 readIdleTimes++;
                 readIdleTimesMap.put(socketAddress, readIdleTimes);
-                if (readIdleTimes > 3) {
+                if (readIdleTimes > 5) {
                     log.error(socketAddress + "读空闲超过3次，关闭连接，释放更多资源");
                     MessageProtocol messageProtocol = new MessageProtocol();
                     //message加上协议字符来区分消息
