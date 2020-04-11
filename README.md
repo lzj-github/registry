@@ -16,6 +16,7 @@ registry核心功能点:
 registry源码图:
 ------
 (图比较复杂，但自认为比较清晰了)
+github上如果图显示不出来，可以尝试:https://www.processon.com/view/link/5e90803c63768929c239945b  <br>
 ![image](https://github.com/lzj-github/registry/blob/master/naming/src/main/resources/Registry%20%E6%BA%90%E7%A0%81%E5%9B%BE.png)
 有疑问的或者发现代码有问题的都可以加我qq一起探讨:983470394
 
