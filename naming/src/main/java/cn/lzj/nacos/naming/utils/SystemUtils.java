@@ -5,6 +5,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.util.*;
 
 public class SystemUtils {
@@ -45,9 +46,15 @@ public class SystemUtils {
                     instance = instance.trim();
                 }
 
-                // 格式： 192.168.153.1:9000|192.168.153.1:9001
+                // 格式： 192.168.153.1:9000,192.168.153.1:9001
                 String serverIp = instance.split(",")[0];
                 String nettyServerIp = instance.split(",")[1];
+                if(serverIp.startsWith("localhost")){
+                    serverIp= InetAddress.getLocalHost().getHostAddress().toString()+serverIp.substring("localhost".length());
+                }
+                if(nettyServerIp.startsWith("localhost")){
+                    nettyServerIp= InetAddress.getLocalHost().getHostAddress().toString()+nettyServerIp.substring("localhost".length());
+                }
                 serversList.add(serverIp);
                 mappingMap.put(serverIp, nettyServerIp);
             }
