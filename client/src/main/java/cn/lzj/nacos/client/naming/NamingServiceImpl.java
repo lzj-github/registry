@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -57,11 +58,16 @@ public class NamingServiceImpl implements NamingService, InitializingBean {
 
     /**
      * 返回所有实例
-     * @return
      */
-    public Map<String, ServiceInfo> getAllInstance(){
-        return hostReactor.getAllInstances();
+    @Override
+    public List<Instance> selectInstances(String serviceName) {
+        ServiceInfo serviceInfo0 = hostReactor.getServiceInfo0(serviceName);
+        List<Instance> instances = serviceInfo0.getInstances();
+        log.info("请求拿到instances:"+instances);
+        return instances;
     }
+
+
 
 
     @Override

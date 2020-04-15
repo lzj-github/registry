@@ -61,6 +61,10 @@ public class HostReactor {
         executor.scheduleWithFixedDelay(new UpdateTask(namespaceId),0, Constants.SERVICE_FOUND_REFRESH_INTEEVAL, TimeUnit.SECONDS);
     }
 
+    public ServiceInfo getServiceInfo0(String serviceName) {
+        return serviceInfoMap.get(serviceName);
+    }
+
     public class UpdateTask implements Runnable {
 
         private String namespaceId;

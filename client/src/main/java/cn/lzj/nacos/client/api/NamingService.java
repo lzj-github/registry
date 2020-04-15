@@ -9,4 +9,6 @@ public interface NamingService {
     public void registerInstance(String serviceName, String groupName , String ip, int port,String nameSpaceId);
 
     public void serviceFound(String namespaceId);
+
+    public List<Instance> selectInstances(String serviceName);
 }

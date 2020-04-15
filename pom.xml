@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>cn.lzj.nacos</groupId>
-    <artifactId>nacos-demo</artifactId>
+    <artifactId>registry</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>nacos-demo</name>
+    <name>registry</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
@@ -37,6 +37,12 @@
             </exclusions>
         </dependency>
     </dependencies>
+
+    <modules>
+        <module>naming</module>
+        <module>client</module>
+        <module>api</module>
+    </modules>
 
     <build>
         <plugins>

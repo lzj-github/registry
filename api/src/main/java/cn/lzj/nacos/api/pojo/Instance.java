@@ -2,6 +2,7 @@ package cn.lzj.nacos.api.pojo;
 
 import lombok.Data;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +19,11 @@ public class Instance {
     private String clusterName;
 
     private Map<String, String> metadata = new HashMap<String, String>();
+
+    public URI getUri(){
+        String uri="http://"+getIp()+":"+getPort();
+        return URI.create(uri);
+    }
 
     //重写hasCode和equals方法
     @Override
