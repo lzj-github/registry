@@ -7,6 +7,8 @@ import cn.lzj.nacos.naming.misc.GlobalExecutor;
 import cn.lzj.nacos.naming.misc.Message;
 import cn.lzj.nacos.naming.misc.ServerSynchronizer;
 import cn.lzj.nacos.naming.misc.Synchronizer;
+import cn.lzj.nacos.naming.netty.NettyServer;
+import cn.lzj.nacos.naming.netty.handler.ServerHandler;
 import cn.lzj.nacos.naming.utils.SystemUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,13 +54,15 @@ public class ServerListManager {
     @Autowired
     private ConsistencyService consistencyService;
 
+
+
     //判断是否刚启动或者刚重启，第一次发送心跳
     private static boolean isFisrtSendHeartBeat=true;
 
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
-        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5);
+        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 1);
     }
 
     /**
@@ -155,6 +159,13 @@ public class ServerListManager {
 
                 //发送心跳给自己
                 onReceiveServerStatus(status);
+
+                //如果这是第二次执行run方法了，即启动时已经发过心跳给其他server了，已经过了5秒，也已经把别的集群的同步信息复制到该注册内存表了
+                //这时这个server也可以正常的使用netty来接收注册信息了
+                if(!isFisrtSendHeartBeat){
+                    log.info("可以正常接收注册信息了...");
+                    ServerHandler.isStartFlag=true;
+                }
 
                 List<Server> allServers=servers;
                 if(allServers.size()>0){
@@ -291,6 +302,7 @@ public class ServerListManager {
                 consistencyService.notifyCluster(server.getKey());
             }
         }
+
     }
 
     /**

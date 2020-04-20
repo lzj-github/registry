@@ -59,6 +59,7 @@ public class ServerSynchronizer implements Synchronizer {
         try {
             HttpClientUtils.HttpResult result = HttpClientUtils.httpPutLarge("http://" + serverIp + "/data/sync", headers, data);
             if (HttpURLConnection.HTTP_OK == result.code) {
+                log.info("同步数据成功...");
                 return true;
             }
             if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {

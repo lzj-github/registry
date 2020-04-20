@@ -28,6 +28,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<MessageProtocol> 
     @Autowired
     private  ServiceManager serviceManager;
 
+    //是否能够接收注册信息的标志位
+    public static volatile boolean isStartFlag=false;
+
     public ServerHandler(ServiceManager serviceManager) {
         this.serviceManager=serviceManager;
     }
@@ -58,6 +61,12 @@ public class ServerHandler extends SimpleChannelInboundHandler<MessageProtocol> 
             if(!AcceptorIdleStateTrigger.dataMap.containsKey(ctx.channel().remoteAddress())){
                 //接收到某个实例的第一次消息(包括注册或心跳)，就把该实例的socketAddress与它的namespaceId和serviceName存起来，方便后续在内存注册表剔除该实例
                 AcceptorIdleStateTrigger.dataMap.put(ctx.channel().remoteAddress(),instance.getNamespaceId()+"##"+instance.getServiceName()+"##"+instance.getIp()+"##"+instance.getPort());
+            }
+            while(true){
+                if(isStartFlag){
+                    break;
+                }
+                Thread.sleep(500);
             }
             serviceManager.registerInstance(instance);
         }else if(msgStr.startsWith(Constants.SERVICE_FOUND_ROUND)&&msgStr.endsWith(Constants.SERVICE_FOUND_ROUND)){

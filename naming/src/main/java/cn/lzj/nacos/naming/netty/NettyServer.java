@@ -45,8 +45,10 @@ public class NettyServer {
     @Autowired
     private NetConfig netConfig;
 
+
     public void start(){
         try{
+
             //创建两个线程组bossGroup和workerGroup, 含有的子线程NioEventLoop的个数默认为cpu核数的两倍
             // bossGroup只是处理连接请求 ,真正的和客户端业务处理，会交给workerGroup完成
             bossGroup = new NioEventLoopGroup(1);
