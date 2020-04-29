@@ -42,10 +42,11 @@ public class Service implements RecordListener {
     @Override
     public void onChange(String key, Instances value) {
         log.info("有事件触发了，观察者的onChange方法被调用了  key="+key+",value="+value);
-        updateIPs(value.getInstanceList());
+        updateIPs(value.getInstanceList(),key);
     }
 
-    public void updateIPs(List<Instance> instanceList) {
+    public void updateIPs(List<Instance> instanceList, String key) {
+        String messageId=key.substring(key.lastIndexOf("##")+2);
         Map<String,List<Instance>> ipMap=new HashMap<>(clusterMap.size());
         for(String clusterName:clusterMap.keySet()){
             ipMap.put(clusterName,new ArrayList<>());
@@ -61,6 +62,7 @@ public class Service implements RecordListener {
                 clusterIPs=new LinkedList<>();
                 ipMap.put(clusterName,clusterIPs);
             }
+            //集合之间是引用关系，在这里clusterIps添加了元素，ipMap里的那个clusterIPs的元素也添加了
             clusterIPs.add(instance);
         }
         //把ipMap最终赋值给service里的clusterMap
@@ -69,7 +71,7 @@ public class Service implements RecordListener {
         //最后再通知serviceManager更新内存注册表,因为service对象不是交给spring容器管理，
         // 所以不能直接使用@Autowired serviceManager，不然拿到的为空
         //通过另一个由spring容器管理的类来发布事件
-        getPushServcie().serviceChanged(this);
+        getPushServcie().serviceChanged(this,messageId);
     }
 
     public PushService getPushServcie() {

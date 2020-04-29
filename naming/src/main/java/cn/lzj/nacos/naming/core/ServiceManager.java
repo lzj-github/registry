@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -78,7 +79,7 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         Instances instances=new Instances();
         instances.setInstanceList(instanceList);
         String key=namespaceId+"##"+serviceName;
-        consistencyService.put(key,instances);
+        consistencyService.put(key,instances,null);
     }
 
     /**
@@ -96,7 +97,7 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         Instances instances=new Instances();
         instances.setInstanceList(instanceList);
         String key=namespaceId+"##"+serviceName;
-        consistencyService.put(key,instances);
+        consistencyService.put(key,instances,null);
     }
 
     /**
@@ -147,6 +148,7 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
     @Override
     public void onApplicationEvent(ServiceChangeEvent serviceChangeEvent) {
         Service service = serviceChangeEvent.getService();
+        String messageId=serviceChangeEvent.getMessageId();
         //放进内存注册表
         putService(service);
         log.info("服务注册完成，内存注册表:"+serviceMap);
@@ -159,8 +161,13 @@ public class ServiceManager implements ApplicationListener<ServiceChangeEvent> {
         instances.setInstanceList(instanceList);
         consistencyService.setInstance(namespaceId+"##"+serviceName,instances);
         log.info("更新缓存dataMap成功:"+consistencyService.getInstances());
-        //同步集群信息
-        consistencyService.notifyCluster(namespaceId+"##"+serviceName);
+
+        //messageId为null才进行集群同步,否则不进行集群同步
+        if(messageId.equals("null")){
+            //同步集群信息
+            consistencyService.notifyCluster(namespaceId+"##"+serviceName);
+        }
+
 
     }
 

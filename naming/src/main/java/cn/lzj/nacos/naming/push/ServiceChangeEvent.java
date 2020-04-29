@@ -8,13 +8,19 @@ import org.springframework.context.ApplicationEvent;
  */
 public class ServiceChangeEvent extends ApplicationEvent {
     private Service service;
+    private String messageId;
 
-    public ServiceChangeEvent(Object source, Service service) {
+    public ServiceChangeEvent(Object source, Service service,String messageId) {
         super(source);
         this.service = service;
+        this.messageId=messageId;
     }
 
     public Service getService() {
         return service;
+    }
+
+    public String getMessageId(){
+        return messageId;
     }
 }

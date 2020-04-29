@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
 @Component("nameingService")
@@ -94,7 +95,6 @@ public class NamingServiceImpl implements NamingService, InitializingBean {
                         discoveryProperties.getClientIp(), discoveryProperties.getClientPort(), discoveryProperties.getNamespace());
                 //从服务端那里获取实例列表
                 serviceFound( discoveryProperties.getNamespace());
-
             }
         }
         new Thread(new Task(countDownLatch)).start();

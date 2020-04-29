@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+
 @Component
 public class PushService {
 
@@ -15,8 +18,8 @@ public class PushService {
      * 有service的实例改变了
      * @param service
      */
-    public void serviceChanged(Service service) {
-        applicationEventPublisher.publishEvent(new ServiceChangeEvent(this,service));
+    public void serviceChanged(Service service,String messageId) {
+        applicationEventPublisher.publishEvent(new ServiceChangeEvent(this,service,messageId));
     }
 
 }

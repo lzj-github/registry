@@ -8,7 +8,7 @@ import java.util.Map;
 public interface ConsistencyService {
 
 
-    void put(String key, Instances instances);
+    void put(String key, Instances instances,String messageId);
 
     void remove(String key);
 

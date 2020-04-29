@@ -6,7 +6,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationListener;
 
 import javax.annotation.PostConstruct;
 import java.util.Map;
@@ -46,11 +45,11 @@ public class ConsistencyServiceImpl implements ConsistencyService {
 
     @Override
     public void listen(String key, RecordListener listener) {
-        if(!listeners.containsKey(key)){
-            listeners.put(key,new CopyOnWriteArrayList<>());
+        if (!listeners.containsKey(key)) {
+            listeners.put(key, new CopyOnWriteArrayList<>());
         }
 
-        if(listeners.get(key).contains(listener)){
+        if (listeners.get(key).contains(listener)) {
             return;
         }
         //添加观察者，listener就是Service实例
@@ -58,39 +57,37 @@ public class ConsistencyServiceImpl implements ConsistencyService {
     }
 
 
+    class Notifier implements Runnable {
 
-    class Notifier implements Runnable{
+        private BlockingDeque<Pair> tasks = new LinkedBlockingDeque(1024 * 1024);
 
-        private BlockingDeque<Pair> tasks=new LinkedBlockingDeque(1024*1024);
-
-        public void addTask(String key, ApplyAction action){
+        public void addTask(String key, String messageId) {
 
             //添加到阻塞队列里面去
-            tasks.add(Pair.with(key,action));
+            tasks.add(Pair.with(key, messageId));
         }
 
         @SneakyThrows
         @Override
         public void run() {
-            while(true){
+            while (true) {
                 //后台线程从阻塞队列里面取数据，若没有数据就阻塞住了
                 Pair pair = tasks.take();
-                if(pair==null){
+                if (pair == null) {
                     continue;
                 }
-                log.info("后台线程有数据拿出来了:"+pair);
+                log.info("后台线程有数据拿出来了:" + pair);
                 String key = (String) pair.getValue0();//namespaceId##serviceName
-                ApplyAction action = (ApplyAction) pair.getValue1();//CHANGE 或者 DELETE
 
                 if (!listeners.containsKey(key)) {
                     continue;
                 }
 
-                for(RecordListener listener:listeners.get(key)){//取出监听者这个key的观察者，调用它们的监听方法
-                    if(action==ApplyAction.CHANGE){
-                        listener.onChange(key,dataMap.get(key));
-                        continue;
-                    }
+                for (RecordListener listener : listeners.get(key)) {//取出监听者这个key的观察者，调用它们的监听方法
+                    //看消息id是否为空
+                    listener.onChange(pair.getValue1()==null?key+"##null":key+"##"+(String)pair.getValue1(), dataMap.get(key));
+                    continue;
+
                 }
 
 
@@ -99,55 +96,58 @@ public class ConsistencyServiceImpl implements ConsistencyService {
     }
 
     @Override
-    public void put(String key, Instances instances) {
-        onPut(key,instances);
+    public void put(String key, Instances instances, String messageId) {
+        onPut(key, instances, messageId);
     }
 
     @Override
-    public void notifyCluster(String key){
+    public void notifyCluster(String key) {
         //通知集群
         taskDispatcher.addTask(key);
     }
 
-    public void onPut(String key, Instances instances) {
-        dataMap.put(key,instances);
+    public void onPut(String key, Instances instances, String messageId) {
+        dataMap.put(key, instances);
         //把实例列表添加到后台线程的阻塞队列里面
-        notifier.addTask(key,ApplyAction.CHANGE);
+        notifier.addTask(key, messageId);
     }
 
     /**
      * 修改完内存注册表再来把当前dataMap修改为最新值
+     *
      * @param key
      * @param instances
      */
     @Override
-    public void setInstance(String key, Instances instances){
-        dataMap.put(key,instances);
+    public void setInstance(String key, Instances instances) {
+        dataMap.put(key, instances);
     }
 
     /**
      * 返回实例列表
+     *
      * @return
      */
     @Override
-    public Map<String, Instances> getInstances(){
+    public Map<String, Instances> getInstances() {
         return dataMap;
     }
 
     /**
-     *暂时没用到该方法，因为添加和删除都使用onPut方法了
+     * 暂时没用到该方法，因为添加和删除都使用onPut方法了
+     *
      * @param key
      */
     @Override
-    public void remove(String key)  {
+    public void remove(String key) {
         onRemove(key);
-        if(!listeners.containsKey(key)){
+        if (!listeners.containsKey(key)) {
             return;
         }
         listeners.remove(key);
     }
 
     public void onRemove(String key) {
-        notifier.addTask(key,ApplyAction.DELETE);
+        notifier.addTask(key, null);
     }
 }

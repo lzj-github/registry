@@ -30,6 +30,11 @@ public class TestController {
 
     @RequestMapping("/test2")
     public String test2(){
+        try {
+            Thread.sleep(60000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return "ok";
     }
 }
