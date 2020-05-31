@@ -1,6 +1,7 @@
 package cn.lzj.nacos.client.controller;
 
 import cn.lzj.nacos.api.pojo.Instance;
+import cn.lzj.nacos.client.config.DiscoveryProperties;
 import cn.lzj.nacos.client.discovery.RegistryDiscoveryClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,9 @@ public class TestController {
     @Autowired
     RegistryDiscoveryClient registryDiscoveryClient;
 
+    @Autowired
+    DiscoveryProperties discoveryProperties;
+
     @RequestMapping("/test")
     public String test(){
         List<Instance> abc = registryDiscoveryClient.getInstances("abc");
@@ -28,13 +32,15 @@ public class TestController {
         return "ok";
     }
 
+    @RequestMapping("/test1")
+    public String test1(){
+        ResponseEntity<String> forEntity =
+                restTemplate.getForEntity("http://abc/test2", String.class);
+        return forEntity.getBody();
+    }
+
     @RequestMapping("/test2")
     public String test2(){
-        try {
-            Thread.sleep(60000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return "ok";
+        return "ok "+discoveryProperties.getClientPort();
     }
 }
