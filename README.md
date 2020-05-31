@@ -12,12 +12,18 @@ registry核心功能点:
 **服务重连**: Client在Server端宕机或者重启或者Client端因为网络问题连接不上Server集群，会自动重连，直到连接上集群上其中的一个Server。<br>
 **Server集群服务心跳**：Server集群间通过http请求来互相发送心跳，每个Server会记录着健康的Server实例，等客户端服务发现时也把健康的Server实例传给Client，以便Client所连接的Server宕机了也能连接上集群上的其他Server节点，默认5s发送一次心跳。<br>
 **支持动态修改集群节点**:在Server集群启动后，可在不影响原本服务的使用的前提下，动态地添加或删除集群节点。<br>
+**负载均衡**:默认轮询策略，可以自定义负载均衡策略<br>
 
-registry源码图:
+registry注册中心源码图:
 ------
 (图比较复杂，但自认为比较清晰了)
 github上如果图显示不出来，可以尝试:https://www.processon.com/view/link/5e90803c63768929c239945b  <br>
-![image](https://github.com/lzj-github/registry/blob/master/naming/src/main/resources/Registry%20%E6%BA%90%E7%A0%81%E5%9B%BE.png)
+![image](https://github.com/lzj-github/registry/blob/master/naming/src/main/resources/Registry%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83%E6%BA%90%E7%A0%81%E5%9B%BE.png)
+
+registry负载均衡源码图:
+------
+github上如果图显示不出来，可以尝试:https://www.processon.com/view/link/5eb0f1637d9c0806f8cf5616  <br>
+![image](https://github.com/lzj-github/registry/blob/master/naming/src/main/resources/Registry%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E6%BA%90%E7%A0%81%E5%9B%BE.png)
 
 **源码图和使用文档都在naming工程的resources目录下**<br>
 有疑问的或者发现代码有问题的都可以加我qq一起探讨:983470394
